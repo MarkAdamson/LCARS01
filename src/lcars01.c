@@ -15,6 +15,7 @@ PBL_APP_INFO(MY_UUID,
 Window window;
 
 BmpContainer bg;
+BmpContainer binClock[6];
 
 GFont lcarsTimeFont;
 GFont lcarsDateFont;
@@ -24,30 +25,30 @@ int secs;
 TextLayer timeLayer; // The clock
 TextLayer dateLayer; //The date
 TextLayer dayLayer; //the day (duh)
-Layer binClock;
+//Layer binClock;
 
 
 void set_container_image(BmpContainer *bmp_container, const int resource_id, GPoint origin) {
 
-  layer_remove_from_parent(&bmp_container->layer.layer);
-  bmp_deinit_container(bmp_container);
+	layer_remove_from_parent(&bmp_container->layer.layer);
+	bmp_deinit_container(bmp_container);
 
-  bmp_init_container(resource_id, bmp_container);
+	bmp_init_container(resource_id, bmp_container);
 
-  GRect frame = layer_get_frame(&bmp_container->layer.layer);
-  frame.origin.x = origin.x;
-  frame.origin.y = origin.y;
-  layer_set_frame(&bmp_container->layer.layer, frame);
+	GRect frame = layer_get_frame(&bmp_container->layer.layer);
+	frame.origin.x = origin.x;
+	frame.origin.y = origin.y;
+	layer_set_frame(&bmp_container->layer.layer, frame);
 
-  layer_add_child(&window.layer, &bmp_container->layer.layer);
+	layer_add_child(&window.layer, &bmp_container->layer.layer);
 }
 
 void uppercase( char *sPtr )
 {
-  while ( *sPtr != '\0' ) {
-    *sPtr = toupper ( ( unsigned char ) *sPtr );
-    ++sPtr;
-  }
+	while ( *sPtr != '\0' ) {
+		*sPtr = toupper ( ( unsigned char ) *sPtr );
+		++sPtr;
+	}
 }
 
 // inserts into subject[] at position pos
@@ -74,56 +75,36 @@ void addspaces(char subject[] )
 // Called once per second
 void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
 
-  (void)t;
-  (void)ctx;
+	(void)t;
+	(void)ctx;
 
-  static char timeText[] = "00 00"; // Needs to be static because it's used by the system later.
-  static char dateText[] = "MMM DD";
-  static char dayText[] = "WEDNESDAY";
+	static char timeText[] = "00 00"; // Needs to be static because it's used by the system later.
+	static char dateText[] = "MMM DD";
+	static char dayText[] = "WEDNESDAY";
 
-  PblTm currentTime;
+	PblTm currentTime;
 
 
-  get_time(&currentTime);
+	get_time(&currentTime);
 
-  string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
-  string_format_time(dateText, sizeof(dateText), "%b %d", &currentTime);
-  string_format_time(dayText, sizeof(dayText), "%A", &currentTime);
-  
-  uppercase(dateText);
-  uppercase(dayText);
+	string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
+	string_format_time(dateText, sizeof(dateText), "%b %d", &currentTime);
+	string_format_time(dayText, sizeof(dayText), "%A", &currentTime);
 
-  text_layer_set_text(&timeLayer, timeText);
-  text_layer_set_text(&dateLayer, dateText);
+	uppercase(dateText);
+	uppercase(dayText);
+
+	text_layer_set_text(&timeLayer, timeText);
+	text_layer_set_text(&dateLayer, dateText);
 	text_layer_set_text(&dayLayer, dayText);
-}
-
-void drawbar(GContext* ctx, int col, int row) {
-	graphics_fill_rect(ctx, GRect(col*14, row*3, 12, 2), 0, GCornerNone);
-}
-
-void drawcolumn(GContext* ctx, int number, int height) {
-	for(int i=9;i >= 0; i--) {
-		if(height > i) drawbar(ctx, number, 9-i);
+	
+	for(int i = 0; i < 6; i++) {
+		if(currentTime.tm_sec >> (5 - i) & 1)
+			layer_add_child(&window.layer, &binClock[i].layer.layer);
+		else
+			layer_remove_from_parent(&binClock[i].layer.layer);
 	}
 }
-
-void drawbinarycolumn(GContext* ctx, int number, bool value) {
-	//if (value) drawcolumn(ctx, number, 10-rand() %4);
-	//else drawcolumn(ctx, number, rand() % 4);
-}
-
-void binClock_update_callback(Layer *me, GContext* ctx ) {
-	PblTm t;
-	get_time(&t);
-    
-	graphics_context_set_fill_color(ctx, GColorBlack);
-	graphics_fill_rect(ctx, GRect(0,0,45,119), 0, GCornerNone);
-    graphics_context_set_fill_color(ctx, GColorWhite);
-	for(int i = 0; i < 6; i++) drawcolumn (ctx, i, (t.tm_sec >> (5 - i)  & 1) ? 10 - (i % 3) : i % 4);
-	//drawcolumn(ctx, i, (i % 2) ? i % 4 : 10 - (i % 4));
-}
-
 
 void handle_init(AppContextRef ctx) {
   // Create our app's base window
@@ -135,11 +116,15 @@ void handle_init(AppContextRef ctx) {
 
   bmp_init_container(RESOURCE_ID_IMAGE_BACKGROUND, &bg);
   layer_add_child(&window.layer, &bg.layer.layer);
-  //set_container_image(&bg, RESOURCE_ID_IMAGE_BACKGROUND, GPoint(5,9));
   
-  layer_init(&binClock, GRect(45,119,82,29));
-  binClock.update_proc = &binClock_update_callback;
-  layer_add_child(&bg.layer.layer, &binClock);
+  set_container_image(&binClock[0], RESOURCE_ID_COL_10, GPoint(45,120));
+  set_container_image(&binClock[1], RESOURCE_ID_COL_9, GPoint(59,120));
+  set_container_image(&binClock[2], RESOURCE_ID_COL_8, GPoint(73,120));
+  set_container_image(&binClock[3], RESOURCE_ID_COL_10, GPoint(87,120));
+  set_container_image(&binClock[4], RESOURCE_ID_COL_9, GPoint(101,120));
+  set_container_image(&binClock[5], RESOURCE_ID_COL_8, GPoint(115,120));
+  
+  //layer_add_child(&bg.layer.layer,&binClock
 
   lcarsTimeFont = \
     fonts_load_custom_font(resource_get_handle(RESOURCE_ID_LCARS_TIME_FONT_60));
@@ -178,6 +163,7 @@ void handle_deinit(AppContextRef ctx) {
   (void)ctx;
 
   bmp_deinit_container(&bg);
+  for(int i=0;i<6;i++) bmp_deinit_container(&binClock[i]);
 
 }
 
