@@ -1,3 +1,5 @@
+// Modified 4/15/2013 to add 12/24h time detection - jimmy0x52
+
 #include "pebble_os.h"
 #include "pebble_app.h"
 #include "pebble_fonts.h"
@@ -85,8 +87,14 @@ void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
 
 
   get_time(&currentTime);
-
-  string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
+  if(clock_is_24h_style())
+  {
+    string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
+  }
+  else
+  {
+    string_format_time(timeText, sizeof(timeText), "%I %M", &currentTime);
+  }
   string_format_time(dateText, sizeof(dateText), "%b %d", &currentTime);
   string_format_time(dayText, sizeof(dayText), "%A", &currentTime);
   
