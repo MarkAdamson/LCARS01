@@ -85,8 +85,14 @@ void handle_second_tick(AppContextRef ctx, PebbleTickEvent *t) {
 
 
   get_time(&currentTime);
-
-  string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
+  if(clock_is_24h_style())
+  {
+    string_format_time(timeText, sizeof(timeText), "%H %M", &currentTime);
+  }
+  else
+  {
+    string_format_time(timeText, sizeof(timeText), "%I %M", &currentTime);
+  }
   string_format_time(dateText, sizeof(dateText), "%b %d", &currentTime);
   string_format_time(dayText, sizeof(dayText), "%A", &currentTime);
   
