@@ -1,3 +1,5 @@
+// Modified 4/15/2013 to add 12/24h time detection - jimmy0x52
+
 #include "pebble_os.h"
 #include "pebble_app.h"
 #include "pebble_fonts.h"
